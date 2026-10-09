@@ -1,0 +1,171 @@
+{
+  "model_name": "logistic_regression",
+  "model_version": "1.0.0",
+  "trained_at": "2026-10-09T11:45:26+00:00",
+  "selection_metric": "roc_auc",
+  "threshold_rule": "max_f2_on_training_oof",
+  "threshold": 0.18,
+  "oof_f2": 0.9030937215650592,
+  "rows": 920,
+  "train_rows": 736,
+  "holdout_rows": 184,
+  "positive_rate": 0.5532608695652174,
+  "best_params": {
+    "clf__C": 0.1
+  },
+  "leaderboard": [
+    {
+      "model_name": "logistic_regression",
+      "cv_roc_auc": 0.8952276429783206,
+      "cv_roc_auc_std": 0.013046422102807192,
+      "best_params": {
+        "clf__C": 0.1
+      }
+    },
+    {
+      "model_name": "random_forest",
+      "cv_roc_auc": 0.8807684095488973,
+      "cv_roc_auc_std": 0.023745486249064158,
+      "best_params": {
+        "clf__max_depth": 6,
+        "clf__min_samples_leaf": 2
+      }
+    },
+    {
+      "model_name": "hist_gradient_boosting",
+      "cv_roc_auc": 0.873124111660697,
+      "cv_roc_auc_std": 0.021511857720563594,
+      "best_params": {
+        "clf__learning_rate": 0.05,
+        "clf__max_depth": 3
+      }
+    }
+  ],
+  "holdout": {
+    "accuracy": 0.75,
+    "precision": 0.6944444444444444,
+    "recall": 0.9803921568627451,
+    "f1": 0.8130081300813008,
+    "f2": 0.9057971014492754,
+    "roc_auc": 0.9092539454806313,
+    "average_precision": 0.9153532648353775,
+    "brier": 0.12127926554108638,
+    "threshold": 0.18,
+    "support": 184,
+    "positives": 102
+  },
+  "holdout_at_0_5": {
+    "accuracy": 0.8315217391304348,
+    "precision": 0.8514851485148515,
+    "recall": 0.8431372549019608,
+    "f1": 0.8472906403940886,
+    "f2": 0.8447937131630648,
+    "roc_auc": 0.9092539454806313,
+    "average_precision": 0.9153532648353775,
+    "brier": 0.12127926554108638,
+    "threshold": 0.5,
+    "support": 184,
+    "positives": 102
+  },
+  "holdout_by_cohort": {
+    "cleveland": {
+      "accuracy": 0.7454545454545455,
+      "precision": 0.6578947368421053,
+      "recall": 0.9615384615384616,
+      "f1": 0.78125,
+      "f2": 0.8802816901408451,
+      "roc_auc": 0.9297082228116711,
+      "average_precision": 0.9289754145752596,
+      "brier": 0.10520065301744687,
+      "threshold": 0.18,
+      "support": 55,
+      "positives": 26
+    },
+    "hungarian": {
+      "accuracy": 0.671875,
+      "precision": 0.5121951219512195,
+      "recall": 0.9545454545454546,
+      "f1": 0.6666666666666666,
+      "f2": 0.813953488372093,
+      "roc_auc": 0.9112554112554113,
+      "average_precision": 0.8720967458887151,
+      "brier": 0.11166214446876446,
+      "threshold": 0.18,
+      "support": 64,
+      "positives": 22
+    },
+    "switzerland": {
+      "accuracy": 0.9642857142857143,
+      "precision": 0.9642857142857143,
+      "recall": 1.0,
+      "f1": 0.9818181818181818,
+      "f2": 0.9926470588235294,
+      "roc_auc": null,
+      "average_precision": 0.9101047763345791,
+      "brier": 0.11470611722378805,
+      "threshold": 0.18,
+      "support": 28,
+      "positives": 27
+    },
+    "va": {
+      "accuracy": 0.7297297297297297,
+      "precision": 0.7297297297297297,
+      "recall": 1.0,
+      "f1": 0.84375,
+      "f2": 0.9310344827586207,
+      "roc_auc": 0.7666666666666666,
+      "average_precision": 0.901992545078877,
+      "brier": 0.16678920041441425,
+      "threshold": 0.18,
+      "support": 37,
+      "positives": 27
+    }
+  },
+  "cleveland_transport": {
+    "train_cohort": "cleveland",
+    "train_rows": 303,
+    "sites": {
+      "hungarian": {
+        "accuracy": 0.8231292517006803,
+        "precision": 0.8648648648648649,
+        "recall": 0.6037735849056604,
+        "f1": 0.7111111111111111,
+        "f2": 0.642570281124498,
+        "roc_auc": 0.8904556403050983,
+        "average_precision": 0.8497504044572131,
+        "brier": 0.12638892078430133,
+        "threshold": 0.5,
+        "support": 294,
+        "positives": 106
+      },
+      "switzerland": {
+        "accuracy": 0.6097560975609756,
+        "precision": 0.971830985915493,
+        "recall": 0.6,
+        "f1": 0.7419354838709677,
+        "f2": 0.6497175141242938,
+        "roc_auc": 0.7402173913043478,
+        "average_precision": 0.9711358661637031,
+        "brier": 0.24978077460670398,
+        "threshold": 0.5,
+        "support": 123,
+        "positives": 115
+      },
+      "va": {
+        "accuracy": 0.565,
+        "precision": 0.8604651162790697,
+        "recall": 0.4966442953020134,
+        "f1": 0.6297872340425532,
+        "f2": 0.5425219941348973,
+        "roc_auc": 0.7091722595078299,
+        "average_precision": 0.8631665342219101,
+        "brier": 0.26269220717306707,
+        "threshold": 0.5,
+        "support": 200,
+        "positives": 149
+      }
+    }
+  },
+  "site_feature": "excluded",
+  "random_state": 42
+}

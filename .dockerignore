@@ -1,0 +1,15 @@
+.venv
+.git
+.github
+mlruns
+logs
+dist
+tests
+notebooks
+reports
+screenshots
+docs
+**/__pycache__
+**/*.pyc
+data
+**/.ipynb_checkpoints
