@@ -2,7 +2,7 @@
 
 Binary screening API for the UCI Heart Disease cohorts. Coursework for **AIMLCZG523 Assignment 01**. The response is a risk score for this assignment. It is not a diagnosis and not a medical device.
 
-Put your name and BITS ID on the cover of `reports/AIMLCZG523_Assignment_01_Report.pdf` before you submit.
+The report cover names Ankit Kumar Srivastava, BITS ID 2025AE05293.
 
 ## Result
 

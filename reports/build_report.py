@@ -213,13 +213,13 @@ def build() -> Path:
     )
     story.append(
         Paragraph(
-            "Student name: ________________________ &nbsp;&nbsp; BITS ID: ________________________",
+            "Student name: Ankit Kumar Srivastava &nbsp;&nbsp; BITS ID: 2025AE05293",
             style["body"],
         )
     )
     story.append(
         Paragraph(
-            "Write your name and ID above before you submit. The repository, figures, and model "
+            "Submitted by Ankit Kumar Srivastava (2025AE05293). The repository, figures, and model "
             "artifact were produced for this assignment from the official UCI Heart Disease files.",
             style["body"],
         )
