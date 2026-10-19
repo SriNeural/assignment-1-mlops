@@ -101,7 +101,7 @@ cd dist/huggingface-space
 huggingface-cli upload <your-user>/cardiascreen-api . --repo-type space
 ```
 
-GitHub is not logged in on this machine (`gh auth login` is required before `git push`). After the push, `.github/workflows/ci.yml` runs ruff, pytest, a full retrain, and an image smoke test. The workflow fails the job on a lint, test, or training error. It does not set `continue-on-error`.
+`.github/workflows/ci.yml` runs on every push. It lints, runs pytest, retrains, uploads the model and figures, then builds the image and calls `/health` and `/predict`. A failure stops the workflow. The latest run is green: https://github.com/SriNeural/assignment-1-mlops/actions/runs/39314946898. A short recording of that pipeline is `videos/pipeline_demo.webm`.
 
 ## Layout
 
@@ -116,7 +116,8 @@ GitHub is not logged in on this machine (`gh auth login` is required before `git
 | `.github/workflows/ci.yml` | Lint, test, retrain, container smoke |
 | `deploy/k8s/`, `deploy/huggingface/` | Cluster manifests and the Space card |
 | `docs/DEMO_SCRIPT.md` | Shot list for the required screen recording |
-| `screenshots/` | Live API, Prometheus, and Grafana captures |
+| `screenshots/` | API, Prometheus, Grafana, MLflow, and Actions captures |
+| `videos/pipeline_demo.webm` | Short recording of the running pipeline |
 
 ## Data
 

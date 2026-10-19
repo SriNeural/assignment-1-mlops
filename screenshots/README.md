@@ -9,5 +9,8 @@ These files are captures of the local compose stack on 9 October 2026. They are 
 | `metrics_endpoint.png` | `GET /metrics`, including 8 `disease_signal` / `very_high` predictions |
 | `prometheus_targets.png` | Prometheus target `http://api:8000/metrics` is UP |
 | `grafana_board.png` | Provisioned Grafana board after those prediction requests |
+| `ci_actions.png` | Green GitHub Actions run: lint, tests, retrain, then image smoke |
+| `mlflow_runs.png` | MLflow experiment `cardiascreen-heart-disease` |
+| `api_predict.png` | Live `POST /predict` response from the running API |
 
-GitHub Actions has no screenshot yet. The workflow runs after the repository is pushed. Record that screen from the Actions tab and add it here.
+The Actions run is https://github.com/SriNeural/assignment-1-mlops/actions/runs/39314946898. Both jobs finished successfully. The warnings on that page are GitHub runner notices, not test failures.
