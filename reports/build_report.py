@@ -131,6 +131,24 @@ def crop_top(path: Path, width: float, fraction: float) -> Image:
     return Image(buffer, width=width, height=width * kept / pixel_w)
 
 
+def side_by_side(left: Image, right: Image, width: float) -> Table:
+    gap = 0.18 * inch
+    half = (width - gap) / 2
+    table = Table([[left, "", right]], colWidths=[half, gap, half])
+    table.setStyle(
+        TableStyle(
+            [
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                ("TOPPADDING", (0, 0), (-1, -1), 0),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+            ]
+        )
+    )
+    return table
+
+
 def grid(headers: list[str], rows: list[list[str]], widths: list[float], style: dict) -> Table:
     data = [[Paragraph(cell, style["head"]) for cell in headers]]
     for row in rows:
@@ -298,19 +316,19 @@ def build() -> Path:
             style["body"],
         )
     )
-    story.append(fitted(FIGURES / "eda_cohort_balance.png", usable))
+    half = (usable - 0.18 * inch) / 2
     story.append(
-        Paragraph(
-            "Figure 1. Cohort size and disease prevalence. The sites do not share a base rate.",
-            style["caption"],
+        side_by_side(
+            fitted(FIGURES / "eda_cohort_balance.png", half),
+            fitted(FIGURES / "eda_missingness.png", half),
+            usable,
         )
     )
-    story.append(fitted(FIGURES / "eda_missingness.png", usable))
     story.append(
         Paragraph(
-            "Figure 2. Missingness by site. Fluoroscopy vessel count (ca) is almost absent outside "
-            "Cleveland. Thallium codes and the slope of the ST segment are also site-specific gaps. "
-            "Cholesterol is missing for every Switzerland row.",
+            "Figure 1. Cohort size and disease prevalence. The sites do not share a base rate. "
+            "Figure 2. Missingness by site. Vessel count (ca) is almost absent outside Cleveland, "
+            "and cholesterol is missing for every Switzerland row.",
             style["caption"],
         )
     )
@@ -328,7 +346,7 @@ def build() -> Path:
             style["body"],
         )
     )
-    story.append(fitted(FIGURES / "eda_correlation.png", 5.4 * inch))
+    story.append(fitted(FIGURES / "eda_correlation.png", 4.5 * inch))
     story.append(
         Paragraph(
             "Figure 3. Cleveland-only correlations. The other sites are left out so that missingness "
@@ -336,21 +354,19 @@ def build() -> Path:
             style["caption"],
         )
     )
-    story.append(fitted(FIGURES / "eda_chest_pain.png", usable))
+    story.append(fitted(FIGURES / "eda_chest_pain.png", usable * 0.9))
     story.append(
         Paragraph(
-            "Figure 4. UCI chest-pain codes, not the 0-3 recoding used by many public CSV mirrors. "
-            "Code 4 (asymptomatic) is both the largest group and the highest disease rate. "
-            "The API rejects code 0 so a Kaggle-style payload cannot be scored by accident.",
+            "Figure 4. UCI chest-pain codes. Code 4 (asymptomatic) is the largest group and the "
+            "highest disease rate. The API rejects code 0 so a Kaggle-style payload cannot be scored.",
             style["caption"],
         )
     )
-    story.append(fitted(FIGURES / "eda_distributions.png", usable * 0.96))
+    story.append(fitted(FIGURES / "eda_distributions.png", usable * 0.9))
     story.append(
         Paragraph(
-            "Figure 5. Observed distributions. Disease rows are older, reach a lower peak heart rate, "
-            "and show more ST depression. Cholesterol overlaps heavily once the zero sentinels are "
-            "removed, which is why a cholesterol coefficient should not be over-read.",
+            "Figure 5. Disease rows are older, reach a lower peak heart rate, and show more ST "
+            "depression. Cholesterol overlaps heavily once the zero sentinels are removed.",
             style["caption"],
         )
     )
@@ -570,12 +586,11 @@ def build() -> Path:
             style["caption"],
         )
     )
-    story.append(fitted(FIGURES / "model_importance.png", usable * 0.92))
+    story.append(fitted(FIGURES / "model_importance.png", usable * 0.86))
     story.append(
         Paragraph(
-            "Figure 8. Largest absolute coefficients. Asymptomatic chest pain (cp_4) and sex lead. "
-            "The signed values for the largest coefficients are listed below. A positive sign raises "
-            "the log-odds of disease.",
+            "Figure 8. Largest absolute coefficients. Asymptomatic chest pain and sex lead. "
+            "A positive sign raises the log-odds of disease.",
             style["caption"],
         )
     )
@@ -601,13 +616,11 @@ def build() -> Path:
             style["caption"],
         )
     )
-    story.append(fitted(FIGURES / "model_calibration.png", 4.6 * inch))
+    story.append(fitted(FIGURES / "model_calibration.png", 4.4 * inch))
     story.append(
         Paragraph(
-            "Figure 9. Holdout calibration of the packaged logistic model. The curve is the check "
-            "on whether a predicted probability can be read as a frequency. Ranking can be good "
-            "while the curve still bends, which is why the API returns both a probability and a "
-            "separate confidence in the emitted class (the probability of the class it chose).",
+            "Figure 9. Holdout calibration. Ranking can be good while a probability is still a "
+            "poor frequency, which is why the API returns both a probability and a confidence.",
             style["caption"],
         )
     )
@@ -713,7 +726,7 @@ def build() -> Path:
             style["body"],
         )
     )
-    story.append(fitted(FIGURES / "architecture.png", usable))
+    story.append(crop_top(FIGURES / "architecture.png", usable * 0.92, 0.74))
     story.append(
         Paragraph(
             "Figure 10. Production path. GitHub Actions gates the image. The image pins code and "
@@ -727,21 +740,20 @@ def build() -> Path:
             "The figures below are from the local compose stack on 9 October 2026, after the image "
             "was built and the API had served prediction requests. "
             "<font face='Courier'>screenshots/</font> also holds the health response and the raw "
-            "metrics page. GitHub Actions has no screenshot yet because the repository had not "
-            "been pushed when this report was generated. The workflow file is the CI evidence "
-            "until that run exists.",
+            "metrics page. The GitHub Actions workflow is <font face='Courier'>.github/workflows/ci.yml</font>. "
+            "A green run on the Actions tab is the CI screenshot to add after the push.",
             style["body"],
         )
     )
     shots = ROOT / "screenshots"
-    story.append(fitted(shots / "api_docs.png", usable * 0.92))
+    story.append(crop_top(shots / "api_docs.png", usable * 0.86, 0.82))
     story.append(
         Paragraph(
             "Figure 11. Interactive API documentation at http://127.0.0.1:8000/docs, including POST /predict.",
             style["caption"],
         )
     )
-    story.append(fitted(shots / "grafana_board.png", usable * 0.92))
+    story.append(fitted(shots / "grafana_board.png", usable * 0.72))
     story.append(
         Paragraph(
             "Figure 12. Grafana board provisioned for the API. The prediction counter reads 8 "
@@ -749,7 +761,7 @@ def build() -> Path:
             style["caption"],
         )
     )
-    story.append(crop_top(shots / "prometheus_targets.png", usable, 0.46))
+    story.append(crop_top(shots / "prometheus_targets.png", usable * 0.92, 0.34))
     story.append(
         Paragraph(
             "Figure 13. Prometheus target http://api:8000/metrics is UP for job cardiascreen.",
