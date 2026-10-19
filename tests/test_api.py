@@ -112,6 +112,9 @@ def test_ci_and_container_contracts_exist() -> None:
     assert "ruff check" in workflow
     assert "pytest" in workflow
     assert "cardiascreen.train" in workflow
+    assert "cardiascreen.versioning check" in workflow
+    assert "cardiascreen.release promote" in workflow
+    assert "download-artifact" in workflow
     assert "continue-on-error" not in workflow
     dockerfile = (PROJECT_ROOT / "Dockerfile").read_text(encoding="utf-8")
     assert "CARDIA_MODEL_PATH" in dockerfile

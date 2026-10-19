@@ -101,7 +101,21 @@ cd dist/huggingface-space
 huggingface-cli upload <your-user>/cardiascreen-api . --repo-type space
 ```
 
-`.github/workflows/ci.yml` runs on every push. It lints, runs pytest, retrains, uploads the model and figures, then builds the image and calls `/health` and `/predict`. A failure stops the workflow. The latest run is green: https://github.com/SriNeural/assignment-1-mlops/actions/runs/39314946898. A short recording of that pipeline is `videos/pipeline_demo.webm`.
+`.github/workflows/ci.yml` runs on every push and pull request. It lints, runs pytest, checks the pinned data version, retrains, and then decides whether that model replaces production. The image job copies the gated `heart_risk_model.joblib` into the build and calls `/health` and `/predict`. A failure stops the workflow, so a rejected model never becomes the image. The latest recorded run is https://github.com/SriNeural/assignment-1-mlops/actions/runs/39314946898. A short recording of that pipeline is `videos/pipeline_demo.webm`.
+
+## Data versions and model handover
+
+The four UCI files are pinned in `data/versions/1.0.0.json`. `data/versions/CURRENT` names the pin that training is allowed to use. `python -m cardiascreen.versioning check` hashes the raw files and fails if any byte differs. After you have reviewed a real change, `python -m cardiascreen.versioning stamp 1.1.0` writes the next pin. Do not train on an unpinned change.
+
+`models/registry.json` is the production record. After training, `python -m cardiascreen.release promote` compares the new holdout fingerprint with that record:
+
+| Result | What happens |
+| --- | --- |
+| Unchanged | Same data version, model, parameters, and threshold, with ROC-AUC and recall inside 0.005. The version stays put and nothing is committed. |
+| Promote | The gate holds: ROC-AUC does not drop by more than 0.005, and recall stays at least 0.90. A new data version bumps the minor number. Any other accepted change bumps the patch. On a push to `main`, Actions commits the model, the registry, and `reports/metrics.json`. |
+| Reject | The holdout missed the gate. The command exits non-zero, the quality job fails, and the image job does not run. The previous release stays in git. |
+
+Pull requests run the same gate and do not push. The bot commit message contains `[skip ci]`, and a `GITHUB_TOKEN` push does not start another workflow.
 
 ## Layout
 
@@ -111,9 +125,11 @@ huggingface-cli upload <your-user>/cardiascreen-api . --repo-type space
 | `tests/` | Unit tests for data, features, metrics, and HTTP |
 | `notebooks/01_eda_and_inference.ipynb` | EDA narrative and sample scores |
 | `data/raw/`, `data/processed/` | UCI files and the cleaned combined CSV |
+| `data/versions/` | SHA256 pin for the raw files and the `CURRENT` pointer |
 | `models/heart_risk_model.joblib` | Pipeline, threshold, and metric snapshot |
+| `models/registry.json` | Production version and the release history |
 | `reports/` | Figures, `metrics.json`, and the written report |
-| `.github/workflows/ci.yml` | Lint, test, retrain, container smoke |
+| `.github/workflows/ci.yml` | Lint, test, data pin, train, promote or reject, image smoke |
 | `deploy/k8s/`, `deploy/huggingface/` | Cluster manifests and the Space card |
 | `docs/DEMO_SCRIPT.md` | Shot list for the required screen recording |
 | `screenshots/` | API, Prometheus, Grafana, MLflow, and Actions captures |

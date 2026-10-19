@@ -6,6 +6,7 @@ __pycache__/
 .ipynb_checkpoints/
 mlruns/
 logs/
+models/release_decision.json
 dist/
 *.pyc
 *.pyo

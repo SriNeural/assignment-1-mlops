@@ -165,12 +165,15 @@ def create_app(model_path: str | Path | None = None) -> FastAPI:
     @app.get("/health")
     def health():
         model = app.state.artifact
-        return {
+        payload = {
             "status": "ok",
             "model_name": model["model_name"],
             "model_version": model["model_version"],
             "threshold": model["threshold"],
         }
+        if model.get("data_version"):
+            payload["data_version"] = model["data_version"]
+        return payload
 
     @app.get("/metadata")
     def metadata():

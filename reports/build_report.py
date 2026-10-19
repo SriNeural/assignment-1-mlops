@@ -740,9 +740,9 @@ def build() -> Path:
             "The figures below are from the local compose stack on 9 October 2026, after the image "
             "was built and the API had served prediction requests. "
             "<font face='Courier'>screenshots/</font> also holds the health response and the raw "
-            "metrics page. GitHub Actions is green for lint, tests, retrain, and image smoke "
-            "(<font face='Courier'>screenshots/ci_actions.png</font>). The workflow is "
-            "<font face='Courier'>.github/workflows/ci.yml</font>.",
+            "metrics page. GitHub Actions checks the data pin, then hands a model over only "
+            "when the holdout gate passes (<font face='Courier'>screenshots/ci_actions.png</font>). "
+            "The workflow is <font face='Courier'>.github/workflows/ci.yml</font>.",
             style["body"],
         )
     )

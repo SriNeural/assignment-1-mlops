@@ -1,0 +1,19 @@
+{
+  "production": "1.0.0",
+  "releases": [
+    {
+      "model_version": "1.0.0",
+      "data_version": "1.0.0",
+      "model_name": "logistic_regression",
+      "holdout_roc_auc": 0.9093,
+      "holdout_recall": 0.9804,
+      "threshold": 0.18,
+      "params": {
+        "clf__C": 0.1
+      },
+      "status": "production",
+      "promoted_at": "2026-10-09T11:45:26+00:00",
+      "reason": "Initial production release."
+    }
+  ]
+}

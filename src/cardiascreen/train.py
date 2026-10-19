@@ -52,6 +52,7 @@ from cardiascreen.plots import (
     plot_threshold_curve,
     readable_feature_names,
 )
+from cardiascreen.versioning import check_data_version
 
 
 @dataclass(frozen=True)
@@ -212,6 +213,7 @@ def train(
     download: bool = True,
 ) -> dict:
     frame = prepare_data(download=download)
+    data_pin = check_data_version()
     x = frame[MODEL_INPUT_COLUMNS]
     y = frame["target"].to_numpy()
     cohort = frame["cohort"].to_numpy()
@@ -248,12 +250,14 @@ def train(
                 "cv_folds": n_splits,
                 "selection_metric": "roc_auc",
                 "threshold_rule": "max_f2_on_training_oof",
+                "data_version": data_pin["data_version"],
             }
         )
         mlflow.set_tags(
             {
                 "site_feature": "excluded",
                 "label": "num>0 angiographic narrowing",
+                "data_version": data_pin["data_version"],
             }
         )
         for spec in model_specs(fast):
@@ -329,6 +333,7 @@ def train(
         metrics = {
             "model_name": winner["model_name"],
             "model_version": MODEL_VERSION,
+            "data_version": data_pin["data_version"],
             "trained_at": trained_at,
             "selection_metric": "roc_auc",
             "threshold_rule": "max_f2_on_training_oof",
@@ -364,6 +369,7 @@ def train(
             "pipeline": winner["estimator"],
             "model_name": winner["model_name"],
             "model_version": MODEL_VERSION,
+            "data_version": data_pin["data_version"],
             "threshold": threshold,
             "trained_at": trained_at,
             "metrics": metrics,

@@ -5,7 +5,7 @@ on:
   pull_request:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   quality:
@@ -38,8 +38,15 @@ jobs:
       - name: Unit tests
         run: pytest -q
 
+      - name: Check pinned data version
+        run: python -m cardiascreen.versioning check
+
       - name: Retrain and package
         run: python -m cardiascreen.train --skip-download
+
+      - name: Promote or keep the production model
+        id: promote
+        run: python -m cardiascreen.release promote
 
       - name: Upload training artifacts
         uses: actions/upload-artifact@v4
@@ -47,9 +54,20 @@ jobs:
           name: training-report
           path: |
             models/heart_risk_model.joblib
+            models/registry.json
+            models/release_decision.json
             reports/metrics.json
             reports/leaderboard.csv
             reports/figures/
+
+      - name: Commit a promoted release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.promote.outputs.action == 'promote'
+        run: |
+          git config user.name "cardiascreen-release"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add models/registry.json models/heart_risk_model.joblib reports/metrics.json
+          git commit -m "Promote CardiaScreen model ${{ steps.promote.outputs.version }} [skip ci]"
+          git push
 
   container:
     name: image smoke
@@ -58,6 +76,18 @@ jobs:
     steps:
       - name: Check out
         uses: actions/checkout@v4
+
+      - name: Download the gated model
+        uses: actions/download-artifact@v4
+        with:
+          name: training-report
+          path: ci-model
+
+      - name: Serve the model the gate accepted
+        run: |
+          found=$(find ci-model -name heart_risk_model.joblib | head -n 1)
+          test -n "$found"
+          cp "$found" models/heart_risk_model.joblib
 
       - name: Build the serving image
         run: docker build -t cardiascreen:ci .

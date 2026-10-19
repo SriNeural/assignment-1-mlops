@@ -1,0 +1,30 @@
+{
+  "data_version": "1.0.0",
+  "source": "UCI Heart Disease processed files",
+  "files": [
+    {
+      "cohort": "cleveland",
+      "filename": "cleveland.data",
+      "sha256": "a74b7efa387bc9d108d7d0115d831fe9b414b29ae7124f331b622b4efa0427c8",
+      "bytes": 18461
+    },
+    {
+      "cohort": "hungarian",
+      "filename": "hungarian.data",
+      "sha256": "d1ad108f785768cd3d7e82dc522e6f5a61eea93cccfb3a46ee8076f73fc3d796",
+      "bytes": 10263
+    },
+    {
+      "cohort": "switzerland",
+      "filename": "switzerland.data",
+      "sha256": "834a405ccf5b66ab4056bb77794adc8df0b7125186454c0a1d002d33c6c3b314",
+      "bytes": 4109
+    },
+    {
+      "cohort": "va",
+      "filename": "va.data",
+      "sha256": "e7c93d8d0d2acdadfa4c5e8de768e2191e7f618b952e29623f1f0d5949ff6b8f",
+      "bytes": 6737
+    }
+  ]
+}
