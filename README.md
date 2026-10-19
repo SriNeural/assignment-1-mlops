@@ -45,6 +45,30 @@ MLflow uses a local sqlite store because MLflow 3 does not treat a plain folder 
 mlflow ui --backend-store-uri sqlite:///mlruns/mlflow.db
 ```
 
+## Prayogshala
+
+The BITS virtual lab is a Windows machine: elearn portal, My Virtual Labs, book a slot, open the RDP file, and sign in with the account that slot page shows. Double-click `setup_prayogshala.bat` in the cloned project. It finds Python, Docker, and Kubernetes. Anything missing is installed when the VM allows it, then the API, Prometheus, Grafana, and MLflow are started. The committed model is served. A new training run is not required.
+
+```bat
+git clone https://github.com/SriNeural/assignment-1-mlops.git
+cd assignment-1-mlops
+setup_prayogshala.bat
+```
+
+`setup_prayogshala.bat --check` only prints what is already installed. The first full run can take a long time because Docker Desktop and the Kubernetes images download. Approve the administrator prompt if Windows asks. If Docker reports that a restart is required, restart the lab machine and double-click the file again.
+
+A lab VM with less than 8 GB of RAM gets kubectl, and the local cluster is left off so the machine is not overloaded. Docker Compose still runs the API on port 8000. If Docker cannot start, because the VM has no virtualization, the same file starts the API with Python instead: `scripts\run_lab.py`.
+
+| Service | URL |
+| --- | --- |
+| API docs | http://127.0.0.1:8000/docs |
+| Prometheus | http://127.0.0.1:9090 |
+| Grafana | http://127.0.0.1:3000 (admin / admin) |
+| MLflow | http://127.0.0.1:5000 |
+| Kubernetes, when the cluster starts | http://127.0.0.1:8080/docs |
+
+The same API is already public at https://iamvastava-cardiascreen-api.hf.space if the lab cannot reach PyPI.
+
 ## API
 
 ```powershell
@@ -126,6 +150,8 @@ Pull requests run the same gate and do not push. The bot commit message contains
 | `reports/` | Figures, `metrics.json`, and the written report |
 | `.github/workflows/ci.yml` | Lint, test, data pin, train, promote or reject, image smoke |
 | `deploy/k8s/`, `deploy/huggingface/` | Cluster manifests and the Space card |
+| `setup_prayogshala.bat` | Windows lab setup: Python, Docker, Kubernetes, Compose, MLflow |
+| `scripts/run_lab.py` | Serve the committed model when Docker is not available |
 | `docs/DEMO_SCRIPT.md` | Shot list for the required screen recording |
 | `screenshots/` | API, Prometheus, Grafana, MLflow, and Actions captures |
 | `videos/pipeline_demo.webm` | Short recording of the running pipeline |
