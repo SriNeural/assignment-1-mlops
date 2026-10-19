@@ -668,16 +668,17 @@ def build() -> Path:
     )
     story.append(
         Paragraph(
-            "Pytest covers label construction, zero sentinels, the four-site load, the feature "
-            "contract, the threshold helper, the small-class AUC guard, and the HTTP contract "
-            "including the Kaggle chest-pain rejection. GitHub Actions in "
-            "<font face='Courier'>.github/workflows/ci.yml</font> runs ruff, then pytest, then a "
-            "full retrain, and uploads the model, metrics, and figures. A second job builds the "
-            "image and calls <font face='Courier'>/health</font> and <font face='Courier'>/predict</font>. "
-            "The workflow does not set continue-on-error. A lint failure, a test failure, or a "
-            "training exception fails the job and the logs stay in the Actions run. The container "
-            "job uses the model committed in the repository. The retrain job proves that a clean "
-            "runner can rebuild it.",
+            "Twenty-nine pytest cases cover the label, the zero sentinels, the four-site load, "
+            "the feature contract, the F2 threshold, the small-class AUC guard, the HTTP contract, "
+            "and the release gate. GitHub Actions in "
+            "<font face='Courier'>.github/workflows/ci.yml</font> then checks the data pin, retrains, "
+            "and runs <font face='Courier'>python -m cardiascreen.release promote</font>. "
+            "The image job downloads that artifact and copies "
+            "<font face='Courier'>heart_risk_model.joblib</font> into the build before "
+            "<font face='Courier'>docker build</font>, then calls "
+            "<font face='Courier'>/health</font> and <font face='Courier'>/predict</font>. "
+            "Nothing in the workflow sets continue-on-error. A lint failure, a test failure, a "
+            "hash mismatch, or a rejected model fails the quality job, and the image job does not run.",
             style["body"],
         )
     )
@@ -787,10 +788,9 @@ def build() -> Path:
     )
     story.append(
         Paragraph(
-            "A short screen recording is part of the deliverable and has to be captured on the "
-            "machine that runs the pipeline. <font face='Courier'>docs/DEMO_SCRIPT.md</font> is a "
-            "three-minute shot list: the training command, the MLflow UI, a prediction, the "
-            "Prometheus target, and the Grafana board. Record it after the compose stack is up.",
+            "The pipeline recording is <font face='Courier'>videos/pipeline_demo.webm</font> "
+            "(50 seconds, 1280 by 720, captured 19 October 2026 on this machine). Section 15 "
+            "walks through the frames. <font face='Courier'>docs/DEMO_SCRIPT.md</font> is the shot list.",
             style["body"],
         )
     )
@@ -803,11 +803,11 @@ def build() -> Path:
                 ["2. Features and models", "cardiascreen.features, cardiascreen.train, reports/metrics.json"],
                 ["3. Experiment tracking", "mlruns/mlflow.db, nested runs under cardiascreen-heart-disease"],
                 ["4. Packaging", "models/heart_risk_model.joblib, requirements.txt, environment.yml"],
-                ["5. Tests and CI", "tests/, .github/workflows/ci.yml (ruff, pytest, retrain, image smoke)"],
+                ["5. Tests and CI", "tests/ (29 cases), ci.yml: pin, train, promote or reject, image smoke"],
                 ["6. Container API", "Dockerfile, POST /predict, scripts/smoke_predict.py"],
-                ["7. Deployment", "docker-compose.yml, deploy/k8s, scripts/export_space.py"],
+                ["7. Deployment", "Compose, deploy/k8s, https://iamvastava-cardiascreen-api.hf.space"],
                 ["8. Monitoring", "GET /metrics, Prometheus, Grafana, screenshots/"],
-                ["9. This report", "README.md, docs/DEMO_SCRIPT.md, and this PDF"],
+                ["9. This report", "This PDF, README.md, videos/pipeline_demo.webm"],
             ],
             [1.7 * inch, 5.4 * inch],
             style,
@@ -816,9 +816,201 @@ def build() -> Path:
     story.append(Spacer(1, 4))
     story.append(
         Paragraph(
-            "Table 6. Map from the assignment tasks to the files a reviewer can open. "
-            "The screen recording is the one item that has to be made after this PDF: follow "
-            "docs/DEMO_SCRIPT.md once the compose stack is running.",
+            "Table 6. Map from the assignment tasks to the files a reviewer can open.",
+            style["caption"],
+        )
+    )
+    story.append(Paragraph("14. Data version and automatic handover", style["h1"]))
+    story.append(
+        Paragraph(
+            "The four raw UCI files are pinned as data version 1.0.0 in "
+            "<font face='Courier'>data/versions/1.0.0.json</font>. "
+            "<font face='Courier'>data/versions/CURRENT</font> names the pin training is allowed "
+            "to use. <font face='Courier'>python -m cardiascreen.versioning check</font> hashes "
+            "every file and raises if any byte differs. Training calls the same check after the "
+            "download step, and GitHub Actions runs it before the retrain. A real change is "
+            "accepted only by <font face='Courier'>python -m cardiascreen.versioning stamp 1.1.0</font>, "
+            "which writes a new pin and moves CURRENT. The pinned digests are Cleveland "
+            "<font face='Courier'>a74b7efa387b…</font>, Hungary "
+            "<font face='Courier'>d1ad108f7857…</font>, Switzerland "
+            "<font face='Courier'>834a405ccf5b…</font>, and VA Long Beach "
+            "<font face='Courier'>e7c93d8d0d2a…</font>. The full hashes are in the pin file and in "
+            "<font face='Courier'>data/CHECKSUMS.txt</font>.",
+            style["body"],
+        )
+    )
+    story.append(
+        Paragraph(
+            "<font face='Courier'>models/registry.json</font> is the production record. After "
+            "training, <font face='Courier'>python -m cardiascreen.release promote</font> compares "
+            "the new holdout fingerprint with that record. The fingerprint is the data version, "
+            "the model name, the holdout ROC-AUC and recall rounded to four decimals, the "
+            "threshold rounded to two decimals, and the selected parameters. Production today is "
+            "logistic regression 1.0.0, data version 1.0.0, ROC-AUC 0.9093, recall 0.9804, "
+            "threshold 0.18, and <font face='Courier'>C=0.1</font>.",
+            style["body"],
+        )
+    )
+    story.append(
+        grid(
+            ["Gate result", "What the pipeline does"],
+            [
+                [
+                    "Unchanged",
+                    "Same data, model, parameters, and threshold, with ROC-AUC and recall inside 0.005. The version stays. Nothing is committed.",
+                ],
+                [
+                    "Promote",
+                    "ROC-AUC drops by at most 0.005 and recall stays at least 0.90. A new data version bumps the minor number. Any other accepted change bumps the patch. On a push to main, Actions commits the model, the registry, and metrics.json.",
+                ],
+                [
+                    "Reject",
+                    "The holdout missed the gate. The command exits non-zero, the quality job fails, and the image job does not run. The previous release stays in git.",
+                ],
+            ],
+            [1.35 * inch, 5.75 * inch],
+            style,
+        )
+    )
+    story.append(
+        Paragraph(
+            "Table 7. Release gate. Pull requests run the same check and do not push. A promote "
+            "commit contains [skip ci], and a GITHUB_TOKEN push does not start another workflow. "
+            "Run 39320091991 retrained this model and skipped the commit step, so version 1.0.0 "
+            "stayed in place. The image job of that run still served the gated artifact. "
+            "Run 39327177612 is the later green run after the public Space was added.",
+            style["caption"],
+        )
+    )
+    story.append(
+        Paragraph(
+            "The same files are what a clean runner installs. <font face='Courier'>requirements.txt</font> "
+            "trains and tracks. <font face='Courier'>requirements-api.txt</font> is the smaller set "
+            "in the image. <font face='Courier'>requirements-dev.txt</font> adds pytest, ruff, and "
+            "the notebook tools. <font face='Courier'>environment.yml</font> is the Conda mirror. "
+            "MLflow 3 will not use a plain folder as a tracking store, so the run writes "
+            "<font face='Courier'>sqlite:///mlruns/mlflow.db</font> and keeps artifacts under "
+            "<font face='Courier'>mlruns/artifacts</font>. The UI is "
+            "<font face='Courier'>mlflow ui --backend-store-uri sqlite:///mlruns/mlflow.db</font> "
+            "at http://127.0.0.1:5000. The home page of that UI opens on GenAI traces. The training "
+            "runs are under the Model training tab, experiment cardiascreen-heart-disease. "
+            "Each nested run logs the candidate name, the cross-validation ROC-AUC, the chosen "
+            "parameters, and the holdout scores. The parent run logs the data version, the split, "
+            "the seed, and the winner.",
+            style["body"],
+        )
+    )
+    story.append(
+        grid(
+            ["Test module", "What it refuses to let drift"],
+            [
+                ["test_data.py", "Severity codes 1-4 become the positive class. Zero cholesterol, blood pressure, and heart rate become missing. Unlabeled rows drop. All four sites stay in the table."],
+                ["test_features.py", "A zero cholesterol sets the missing indicator. Vessel count and thallium may be absent. Site and the label never enter the matrix. Percent-of-predicted heart rate stays bounded."],
+                ["test_evaluate.py", "The F2 search prefers recall. Scores use the requested threshold. ROC-AUC is withheld when a class has fewer than five rows."],
+                ["test_api.py", "Health, predict, and metrics respond. A Kaggle chest-pain code of 0 is rejected. A client cannot submit the label. Null invasive fields still score. The workflow names the pin check, the promote step, and the artifact download, and it has no continue-on-error."],
+                ["test_versioning.py", "The pin matches the raw files. A changed file fails the check. The seeded registry is unchanged. Noise inside 0.005 stays on 1.0.0. A stronger model bumps the patch. A new data version bumps the minor. A weak model is rejected and the joblib file is left untouched."],
+            ],
+            [1.45 * inch, 5.65 * inch],
+            style,
+        )
+    )
+    story.append(
+        Paragraph(
+            "Table 8. The 29 unit tests, grouped by file. They run in Actions before training.",
+            style["caption"],
+        )
+    )
+    story.append(Paragraph("15. Public API and the screen recording", style["h1"]))
+    story.append(
+        Paragraph(
+            "The checked public endpoint is "
+            "<font face='Courier'>https://iamvastava-cardiascreen-api.hf.space</font>. "
+            "On 19 October 2026, <font face='Courier'>GET /health</font> returned status ok, "
+            "logistic regression 1.0.0, threshold 0.18. <font face='Courier'>POST /predict</font> "
+            "with <font face='Courier'>deploy/sample_request.json</font> returned prediction 1, "
+            "disease_signal, probability 0.988089, confidence 0.988089, band very_high, and the "
+            "coursework disclaimer. Hugging Face now requires a paid plan for a Docker Space on "
+            "CPU Basic, so this host is the free ZeroGPU Space in "
+            "<font face='Courier'>deploy/huggingface/gradio</font>. It serves the same JSON routes "
+            "as the container. The Space sleeps when idle, and the first request after sleep is slow. "
+            "<font face='Courier'>scripts/export_space.py</font> still builds the Docker folder. "
+            "The local Compose stack on ports 8000, 9090, and 3000 remains the monitored runtime. "
+            "Kubernetes manifests are in <font face='Courier'>deploy/k8s</font>; the cluster API "
+            "was not running when this report was written.",
+            style["body"],
+        )
+    )
+    story.append(
+        Paragraph(
+            "The recording is <font face='Courier'>videos/pipeline_demo.webm</font>, 50 seconds, "
+            "1280 by 720, captured from the live stack and the public Actions page. It is not a "
+            "generated clip. The frames, in order, are the title card, GitHub Actions run 2 with "
+            "both jobs green, the MLflow experiment "
+            "<font face='Courier'>cardiascreen-heart-disease</font> open on the model-selection "
+            "runs, the Swagger <font face='Courier'>POST /predict</font> response, the Prometheus "
+            "target <font face='Courier'>cardiascreen</font> UP, and the Grafana board as the "
+            "prediction counter steps. The repository is "
+            "<font face='Courier'>https://github.com/SriNeural/assignment-1-mlops</font>.",
+            style["body"],
+        )
+    )
+    story.append(
+        grid(
+            ["Sample file", "What the local container returned"],
+            [
+                ["deploy/sample_request.json", "Disease signal, probability 0.988, confidence 0.988, band very high. Age 67, male, asymptomatic chest pain, cholesterol 286."],
+                ["deploy/sample_request_low_risk.json", "No disease signal, probability 0.031, band low."],
+                ["deploy/sample_request_screening.json", "Disease signal, probability 0.949. Cholesterol, fasting sugar, vessel count, and thallium are null."],
+            ],
+            [2.35 * inch, 4.75 * inch],
+            style,
+        )
+    )
+    story.append(
+        Paragraph(
+            "Table 9. The three checked requests. The same high-risk body, posted to the public "
+            "Space, returned probability 0.988089. Local docs are at http://127.0.0.1:8000/docs. "
+            "Grafana is http://127.0.0.1:3000, user admin, password admin, and anonymous viewing "
+            "is on. Prometheus targets are at http://127.0.0.1:9090/targets.",
+            style["caption"],
+        )
+    )
+    story.append(fitted(shots / "ci_actions.png", usable * 0.98))
+    story.append(
+        Paragraph(
+            "Figure 14. GitHub Actions run for the 10-page report commit. Lint, tests, retrain, "
+            "and image smoke are green. Later runs add the data pin and the release gate.",
+            style["caption"],
+        )
+    )
+    story.append(fitted(shots / "mlflow_runs.png", usable * 0.98))
+    story.append(
+        Paragraph(
+            "Figure 15. MLflow experiment cardiascreen-heart-disease. The parent run is "
+            "model-selection. Nested runs are the three candidates.",
+            style["caption"],
+        )
+    )
+    story.append(fitted(shots / "api_predict.png", usable * 0.98))
+    story.append(
+        Paragraph(
+            "Figure 16. Live POST /predict from the recording. Prediction 1, probability 0.988089, "
+            "confidence 0.988089, threshold 0.18, band very_high, model 1.0.0.",
+            style["caption"],
+        )
+    )
+    story.append(fitted(shots / "api_health.png", usable * 0.86))
+    story.append(
+        Paragraph(
+            "Figure 17. Health response from the local API after the image was built.",
+            style["caption"],
+        )
+    )
+    story.append(crop_top(shots / "metrics_endpoint.png", usable * 0.92, 0.62))
+    story.append(
+        Paragraph(
+            "Figure 18. Prometheus text from GET /metrics, including the request counter and the "
+            "prediction histogram.",
             style["caption"],
         )
     )
@@ -835,6 +1027,47 @@ def build() -> Path:
             style["body"],
         )
     )
+    story.append(Paragraph("16. What to open for each mark", style["h1"]))
+    story.append(
+        Paragraph(
+            "The mark scheme is nine tasks. Each one below names the file or the URL that shows "
+            "the work, so a review does not depend on reconstructing the repository. The commands "
+            "in section 2 are the clean-setup path: a new virtual environment, the pinned "
+            "requirements, <font face='Courier'>PYTHONPATH=src</font>, then data, EDA, training, "
+            "and pytest. Docker Compose is the monitored runtime. The public score endpoint is "
+            "the Space URL in section 15.",
+            style["body"],
+        )
+    )
+    story.append(
+        grid(
+            ["Marks", "Open this"],
+            [
+                ["1. Data and EDA, 5", "data/raw, data/versions/1.0.0.json, reports/figures/eda_*.png, notebooks/01_eda_and_inference.ipynb."],
+                ["2. Features and models, 8", "cardiascreen.features, reports/metrics.json, reports/leaderboard.csv. Three models, training-only selection, holdout accuracy, precision, recall, and ROC-AUC."],
+                ["3. Tracking, 5", "mlruns/mlflow.db after training, or Figure 15. Parameters, metrics, and plots are nested under cardiascreen-heart-disease."],
+                ["4. Packaging, 7", "models/heart_risk_model.joblib, models/MODEL_CARD.md, requirements.txt, requirements-api.txt, environment.yml. The transformer is inside the pipeline."],
+                ["5. Tests and CI, 8", "tests/ and .github/workflows/ci.yml. Actions run 39327177612 is green for lint, tests, the data pin, training, the release gate, and image smoke."],
+                ["6. Container API, 5", "Dockerfile and POST /predict. The image job calls /health and /predict. Figure 16 is the same response from the recording."],
+                ["7. Deployment, 7", "docker-compose.yml, deploy/k8s (Deployment, probes, LoadBalancer, Ingress), and https://iamvastava-cardiascreen-api.hf.space."],
+                ["8. Monitoring, 3", "JSON logs, GET /metrics, Prometheus, Grafana. Figures 12, 13, 17, and 18. Grafana login is admin / admin."],
+                ["9. Report and video, 2", "This PDF, README.md, and videos/pipeline_demo.webm. Repository: https://github.com/SriNeural/assignment-1-mlops."],
+            ],
+            [1.55 * inch, 5.55 * inch],
+            style,
+        )
+    )
+    story.append(
+        Paragraph(
+            "Table 10. Where each part of the 50-mark scheme is evidenced. The Kubernetes "
+            "manifests are the cluster path. The cluster API on port 6443 was not running on the "
+            "machine that produced this report, so the running proof is Compose plus the public "
+            "Space. A rejected model fails Actions before a new image is built. An unchanged "
+            "retrain keeps model 1.0.0. The score is a screening signal for this assignment. It "
+            "is not a diagnosis and it is not a medical device.",
+            style["caption"],
+        )
+    )
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     document = SimpleDocTemplate(
         str(OUTPUT),
@@ -844,7 +1077,7 @@ def build() -> Path:
         topMargin=0.65 * inch,
         bottomMargin=0.7 * inch,
         title="AIMLCZG523 Assignment 01 — CardiaScreen",
-        author="AIMLCZG523 Assignment 01",
+        author="Ankit Kumar Srivastava",
     )
     document.build(story, onFirstPage=footer, onLaterPages=footer)
     return OUTPUT
