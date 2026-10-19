@@ -716,13 +716,13 @@ def build() -> Path:
     )
     story.append(
         Paragraph(
-            "<font face='Courier'>scripts/export_space.py</font> copies the Dockerfile, the API "
-            "requirements, the package, the model, and a Space README into "
-            "<font face='Courier'>dist/huggingface-space</font>. That folder is a Hugging Face "
-            "Docker Space on the free CPU tier. Upload it with the Hugging Face CLI after "
-            "<font face='Courier'>huggingface-cli login</font>. The Space sleeps when idle; the "
-            "first request after sleep is slow. The public URL, once created, is the deployed API "
-            "link for the submission.",
+            "The public API is "
+            "<font face='Courier'>https://iamvastava-cardiascreen-api.hf.space</font>. "
+            "<font face='Courier'>GET /health</font> and <font face='Courier'>POST /predict</font> "
+            "were checked there and match the local container. A Docker Space on the free CPU tier "
+            "now requires a paid Hugging Face plan, so this host is the free ZeroGPU Space in "
+            "<font face='Courier'>deploy/huggingface/gradio</font>. It sleeps when idle. "
+            "<font face='Courier'>scripts/export_space.py</font> still builds the Docker folder.",
             style["body"],
         )
     )

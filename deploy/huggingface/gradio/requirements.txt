@@ -1,0 +1,9 @@
+pandas==3.0.6
+numpy==2.4.6
+scikit-learn==1.9.1
+joblib==1.6.0
+fastapi==0.143.0
+uvicorn==0.54.0
+# Gradio's Space image installs the mcp extra, which rejects pydantic 2.14.
+pydantic==2.12.5
+prometheus-client==0.26.0

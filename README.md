@@ -92,14 +92,9 @@ kubectl apply -k deploy/k8s
 kubectl port-forward svc/cardiascreen-api 8080:80 -n cardiascreen
 ```
 
-A free public host is a Hugging Face Docker Space:
+The public API is https://iamvastava-cardiascreen-api.hf.space. `GET /health` and `POST /predict` return the same JSON as the local container. The Space page is https://huggingface.co/spaces/iamvastava/cardiascreen-api.
 
-```powershell
-python scripts/export_space.py
-huggingface-cli login
-cd dist/huggingface-space
-huggingface-cli upload <your-user>/cardiascreen-api . --repo-type space
-```
+Hugging Face now requires a paid plan for a Docker Space on the free CPU tier. This account uses the free ZeroGPU allowance instead. `deploy/huggingface/gradio` is the Space that is live. `scripts/export_space.py` still builds the Docker folder for a machine that can host it. The Space sleeps when idle, so the first request after sleep is slow.
 
 `.github/workflows/ci.yml` runs on every push and pull request. It lints, runs pytest, checks the pinned data version, retrains, and then decides whether that model replaces production. The image job copies the gated `heart_risk_model.joblib` into the build and calls `/health` and `/predict`. A failure stops the workflow, so a rejected model never becomes the image. The latest recorded run is https://github.com/SriNeural/assignment-1-mlops/actions/runs/39314946898. A short recording of that pipeline is `videos/pipeline_demo.webm`.
 
