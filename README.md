@@ -47,7 +47,7 @@ mlflow ui --backend-store-uri sqlite:///mlruns/mlflow.db
 
 ## Prayogshala
 
-The BITS virtual lab is a Windows machine: elearn portal, My Virtual Labs, book a slot, open the RDP file, and sign in with the account that slot page shows. Double-click `setup_prayogshala.bat` in the cloned project. It finds Python, Docker, and Kubernetes. Anything missing is installed when the VM allows it. If a Kubernetes node is already Ready, the script loads `cardiascreen-api:local` into that cluster, applies `deploy/k8s`, waits for the rollout, and forwards the service to port 8080. Otherwise it starts Docker Desktop Kubernetes when the VM has at least 8 GB, or a small minikube cluster from 4 GB up. The committed model is served. A new training run is not required.
+The BITS virtual lab is either Windows or Red Hat. Book a slot from the elearn portal, My Virtual Labs, open the session, and sign in with the account that slot page shows. Clone this project and run the script for that operating system. Either script finds Python, a container engine, and Kubernetes. Anything missing is installed when the VM allows it. If a Kubernetes node is already Ready, the script loads `cardiascreen-api:local` into that cluster, applies `deploy/k8s`, waits for the rollout, and forwards the service to port 8080. On Windows it otherwise starts Docker Desktop Kubernetes when the VM has at least 8 GB, or a small minikube cluster from 4 GB up. On Red Hat it starts k3s, which does not need Docker Desktop, and falls back to minikube. Podman is used when Docker is not installed. The committed model is served. A new training run is not required.
 
 ```bat
 git clone https://github.com/SriNeural/assignment-1-mlops.git
@@ -55,9 +55,16 @@ cd assignment-1-mlops
 setup_prayogshala.bat
 ```
 
-`setup_prayogshala.bat --check` only prints what is already installed. The first full run can take a long time because Docker Desktop and the Kubernetes images download. Approve the administrator prompt if Windows asks. If Docker reports that a restart is required, restart the lab machine and double-click the file again.
+```bash
+git clone https://github.com/SriNeural/assignment-1-mlops.git
+cd assignment-1-mlops
+chmod +x setup_prayogshala.sh
+./setup_prayogshala.sh
+```
 
-A VM under 8 GB that does get a cluster runs one replica, and Prometheus and Grafana stay off so the node keeps its memory. At 8 GB or more, Compose also starts the API, Prometheus, and Grafana. Under about 4 GB, with no Ready node, the local cluster is not started. If Docker cannot start, because the VM has no virtualization, and no deployment is already Ready, the same file starts the API with Python instead: `scripts\run_lab.py`.
+`setup_prayogshala.bat --check` and `./setup_prayogshala.sh --check` only print what is already installed. The first full run can take a long time because the container engine and the Kubernetes images download. On Windows, approve the administrator prompt if it appears, and restart the lab machine if Docker says a restart is required. On Red Hat, the script asks for `sudo` when it installs packages or starts k3s.
+
+A VM under 8 GB that does get a cluster runs one replica, and Prometheus and Grafana stay off so the node keeps its memory. At 8 GB or more, Compose also starts the API, Prometheus, and Grafana. Under about 4 GB, with no Ready node, the local cluster is not started. If the container engine cannot start and no deployment is already Ready, the same file starts the API with Python instead: `scripts/run_lab.py`.
 
 | Service | URL |
 | --- | --- |

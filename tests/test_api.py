@@ -120,6 +120,22 @@ def test_prayogshala_script_deploys_to_a_ready_cluster() -> None:
     assert "http://127.0.0.1:8080/health" in bat
 
 
+def test_prayogshala_shell_script_targets_red_hat() -> None:
+    script = (PROJECT_ROOT / "setup_prayogshala.sh").read_text(encoding="utf-8")
+    ready = script.index("Using the Kubernetes cluster that is already Ready.")
+    start_gate = script.index("Starting a local cluster needs about 4 GB.")
+    assert ready < start_gate
+    assert "k3s" in script
+    assert "podman" in script
+    assert "kubectl rollout status deployment/cardiascreen-api -n cardiascreen" in script
+    assert "minikube image load cardiascreen-api:local" in script
+    assert "kind load docker-image cardiascreen-api:local" in script
+    assert "k3d image import cardiascreen-api:local" in script
+    assert "k3s ctr images import" in script
+    assert "http://127.0.0.1:8080/health" in script
+    assert "\r" not in script
+
+
 def test_ci_and_container_contracts_exist() -> None:
     workflow = (PROJECT_ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
     assert "ruff check" in workflow
