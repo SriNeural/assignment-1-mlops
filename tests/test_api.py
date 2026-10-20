@@ -107,6 +107,19 @@ def test_optional_invasive_fields_score(tmp_path) -> None:
     assert response.status_code == 200
 
 
+def test_prayogshala_script_deploys_to_a_ready_cluster() -> None:
+    bat = (PROJECT_ROOT / "setup_prayogshala.bat").read_text(encoding="utf-8")
+    ready = bat.index("Using the Kubernetes cluster that is already Ready.")
+    start_gate = bat.index("Starting a local cluster needs about 4 GB.")
+    assert ready < start_gate
+    assert "A local Kubernetes cluster needs about 8 GB" not in bat
+    assert "kubectl rollout status deployment/cardiascreen-api -n cardiascreen" in bat
+    assert "minikube image load cardiascreen-api:local" in bat
+    assert "kind load docker-image cardiascreen-api:local" in bat
+    assert "k3d image import cardiascreen-api:local" in bat
+    assert "http://127.0.0.1:8080/health" in bat
+
+
 def test_ci_and_container_contracts_exist() -> None:
     workflow = (PROJECT_ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
     assert "ruff check" in workflow

@@ -47,7 +47,7 @@ mlflow ui --backend-store-uri sqlite:///mlruns/mlflow.db
 
 ## Prayogshala
 
-The BITS virtual lab is a Windows machine: elearn portal, My Virtual Labs, book a slot, open the RDP file, and sign in with the account that slot page shows. Double-click `setup_prayogshala.bat` in the cloned project. It finds Python, Docker, and Kubernetes. Anything missing is installed when the VM allows it, then the API, Prometheus, Grafana, and MLflow are started. The committed model is served. A new training run is not required.
+The BITS virtual lab is a Windows machine: elearn portal, My Virtual Labs, book a slot, open the RDP file, and sign in with the account that slot page shows. Double-click `setup_prayogshala.bat` in the cloned project. It finds Python, Docker, and Kubernetes. Anything missing is installed when the VM allows it. If a Kubernetes node is already Ready, the script loads `cardiascreen-api:local` into that cluster, applies `deploy/k8s`, waits for the rollout, and forwards the service to port 8080. Otherwise it starts Docker Desktop Kubernetes when the VM has at least 8 GB, or a small minikube cluster from 4 GB up. The committed model is served. A new training run is not required.
 
 ```bat
 git clone https://github.com/SriNeural/assignment-1-mlops.git
@@ -57,15 +57,15 @@ setup_prayogshala.bat
 
 `setup_prayogshala.bat --check` only prints what is already installed. The first full run can take a long time because Docker Desktop and the Kubernetes images download. Approve the administrator prompt if Windows asks. If Docker reports that a restart is required, restart the lab machine and double-click the file again.
 
-A lab VM with less than 8 GB of RAM gets kubectl, and the local cluster is left off so the machine is not overloaded. Docker Compose still runs the API on port 8000. If Docker cannot start, because the VM has no virtualization, the same file starts the API with Python instead: `scripts\run_lab.py`.
+A VM under 8 GB that does get a cluster runs one replica, and Prometheus and Grafana stay off so the node keeps its memory. At 8 GB or more, Compose also starts the API, Prometheus, and Grafana. Under about 4 GB, with no Ready node, the local cluster is not started. If Docker cannot start, because the VM has no virtualization, and no deployment is already Ready, the same file starts the API with Python instead: `scripts\run_lab.py`.
 
 | Service | URL |
 | --- | --- |
-| API docs | http://127.0.0.1:8000/docs |
+| Kubernetes API docs | http://127.0.0.1:8080/docs |
+| Compose API docs, when Compose starts | http://127.0.0.1:8000/docs |
 | Prometheus | http://127.0.0.1:9090 |
 | Grafana | http://127.0.0.1:3000 (admin / admin) |
 | MLflow | http://127.0.0.1:5000 |
-| Kubernetes, when the cluster starts | http://127.0.0.1:8080/docs |
 
 The same API is already public at https://iamvastava-cardiascreen-api.hf.space if the lab cannot reach PyPI.
 
