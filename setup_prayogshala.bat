@@ -67,6 +67,7 @@ if errorlevel 1 (
     if "!COMPOSE_OK!"=="1" call :smoke_compose
 )
 if "!CLUSTER_OK!"=="1" call :smoke_k8s
+call :publish_tracking
 call :start_mlflow
 call :summary
 echo.
@@ -559,6 +560,13 @@ echo Starting the API on http://127.0.0.1:8000 without Docker
 start "CardiaScreen API" cmd /k "cd /d ""%~dp0"" && set PYTHONPATH=src && .venv\Scripts\python.exe scripts\run_lab.py"
 exit /b 0
 
+:publish_tracking
+echo Publishing the committed model into the MLflow Model Registry
+set PYTHONPATH=src
+".venv\Scripts\python.exe" -m cardiascreen.tracking
+if errorlevel 1 echo The model was not added to the MLflow registry. The UI can still open.
+exit /b 0
+
 :start_mlflow
 netstat -ano | findstr ":5000" | findstr "LISTENING" >nul
 if not errorlevel 1 (
@@ -595,7 +603,8 @@ if "!PYTHON_OK!"=="1" (
 if "!CLUSTER_OK!"=="0" if "!COMPOSE_OK!"=="0" if "!PYTHON_OK!"=="0" (
     echo Nothing is serving. Read the messages above.
 )
-echo   MLflow       http://127.0.0.1:5000
+echo   MLflow runs     http://127.0.0.1:5000/#/experiments/1/runs?workflowType=machine_learning
+echo   Model Registry  http://127.0.0.1:5000/#/models/cardiascreen-heart-risk
 echo The public copy is https://iamvastava-cardiascreen-api.hf.space
 echo A new training run is optional. The model already in git is the one being served.
 echo ----------------------------------------

@@ -92,3 +92,5 @@ MODEL_VERSION = "1.0.0"
 # beta=2 weights recall above precision: a missed narrowing is costlier than an extra review.
 F_BETA = 2.0
 EXPERIMENT_NAME = "cardiascreen-heart-disease"
+REGISTERED_MODEL_NAME = "cardiascreen-heart-risk"
+CHAMPION_ALIAS = "champion"

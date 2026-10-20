@@ -118,6 +118,9 @@ def test_prayogshala_script_deploys_to_a_ready_cluster() -> None:
     assert "kind load docker-image cardiascreen-api:local" in bat
     assert "k3d image import cardiascreen-api:local" in bat
     assert "http://127.0.0.1:8080/health" in bat
+    assert bat.index("call :publish_tracking") < bat.index("call :start_mlflow")
+    assert "-m cardiascreen.tracking" in bat
+    assert "http://127.0.0.1:5000/#/models/cardiascreen-heart-risk" in bat
 
 
 def test_prayogshala_shell_script_targets_red_hat() -> None:
@@ -133,6 +136,14 @@ def test_prayogshala_shell_script_targets_red_hat() -> None:
     assert "k3d image import cardiascreen-api:local" in script
     assert "k3s ctr images import" in script
     assert "http://127.0.0.1:8080/health" in script
+    assert "  publish_tracking\n  start_mlflow" in script
+    assert "-m cardiascreen.tracking" in script
+    assert "http://127.0.0.1:5000/#/models/cardiascreen-heart-risk" in script
+    assert "kubectl rollout restart deployment/cardiascreen-api -n cardiascreen" in script
+    assert "Restarting the port forward" in script
+    assert "Restarting MLflow." in script
+    assert "compose_cmd down" in script
+    assert "MLflow is already using port 5000." not in script
     assert "\r" not in script
 
 

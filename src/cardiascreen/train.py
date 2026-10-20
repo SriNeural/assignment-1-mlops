@@ -52,6 +52,7 @@ from cardiascreen.plots import (
     plot_threshold_curve,
     readable_feature_names,
 )
+from cardiascreen.tracking import register_model_uri
 from cardiascreen.versioning import check_data_version
 
 
@@ -190,10 +191,10 @@ def _restore_params(params: dict) -> dict:
     return restored
 
 
-def _log_mlflow_model(pipeline, x_example: pd.DataFrame) -> None:
+def _log_mlflow_model(pipeline, x_example: pd.DataFrame):
     # Float example so MLflow's schema allows the nulls the API accepts.
     example = x_example.head(5).astype("float64")
-    mlflow.sklearn.log_model(
+    return mlflow.sklearn.log_model(
         pipeline,
         name="model",
         input_example=example,
@@ -235,6 +236,8 @@ def train(
     if client.get_experiment_by_name(EXPERIMENT_NAME) is None:
         mlflow.create_experiment(EXPERIMENT_NAME, artifact_location=artifact_location)
     mlflow.set_experiment(EXPERIMENT_NAME)
+    # MLflow 3 opens an experiment on the empty GenAI page unless the kind is set.
+    mlflow.set_experiment_tag("mlflow.experimentKind", "classification")
 
     leaderboard = []
     with mlflow.start_run(run_name="model-selection"):
@@ -327,7 +330,18 @@ def train(
             }
         )
         mlflow.log_params({"winner": winner["model_name"], **winner["best_params"]})
-        _log_mlflow_model(winner["estimator"], x_train)
+        info = _log_mlflow_model(winner["estimator"], x_train)
+        if info.model_id:
+            model_uri = f"models:/{info.model_id}"
+        else:
+            model_uri = f"runs:/{info.run_id}/{info.artifact_path}"
+        register_model_uri(
+            model_uri,
+            description=(
+                f"{winner['model_name']} {MODEL_VERSION}, threshold {threshold:.2f}, "
+                f"holdout ROC-AUC {holdout['roc_auc']:.3f}."
+            ),
+        )
 
         trained_at = datetime.now(UTC).replace(microsecond=0).isoformat()
         metrics = {

@@ -46,6 +46,37 @@ http_ok() {
   "$ROOT/.venv/bin/python" -c "import urllib.request,sys; urllib.request.urlopen(sys.argv[1], timeout=5)" "$url" >/dev/null 2>&1
 }
 
+stop_port() {
+  local port="$1"
+  local pidfile="${2:-}"
+  local pid listeners
+  if [[ -n "$pidfile" && -f "$pidfile" ]]; then
+    pid="$(tr -d '[:space:]' < "$pidfile" || true)"
+    if [[ "$pid" =~ ^[0-9]+$ ]]; then
+      kill "$pid" 2>/dev/null || true
+    fi
+    rm -f "$pidfile"
+  fi
+  if command -v ss >/dev/null 2>&1; then
+    listeners="$(ss -lptn "sport = :${port}" 2>/dev/null | grep -o 'pid=[0-9]*' | cut -d= -f2 | sort -u || true)"
+    for pid in $listeners; do
+      kill "$pid" 2>/dev/null || as_root kill "$pid" 2>/dev/null || true
+    done
+  elif command -v fuser >/dev/null 2>&1; then
+    fuser -k "${port}/tcp" >/dev/null 2>&1 || as_root fuser -k "${port}/tcp" >/dev/null 2>&1 || true
+  fi
+  local i
+  for i in 1 2 3 4 5 6 7 8 9 10; do
+    if ! command -v ss >/dev/null 2>&1; then
+      return 0
+    fi
+    if ! ss -lnt "sport = :${port}" 2>/dev/null | grep -q ":${port}"; then
+      return 0
+    fi
+    sleep 1
+  done
+}
+
 node_ready() {
   kubectl get nodes --request-timeout=8s --no-headers 2>/dev/null | grep -E '[[:space:]]Ready[[:space:]]' >/dev/null
 }
@@ -348,20 +379,22 @@ load_image() {
 
 expose_k8s() {
   WAIT_URL="http://127.0.0.1:8080/health"
-  if http_ok "$WAIT_URL"; then
-    say "Kubernetes API is already answering on port 8080."
-    return 0
-  fi
-  say "Forwarding the Kubernetes service to http://127.0.0.1:8080"
+  say "Restarting the port forward to http://127.0.0.1:8080"
   mkdir -p "$ROOT/logs"
+  stop_port 8080 "$ROOT/logs/port-forward.pid"
   nohup kubectl port-forward --address 127.0.0.1 svc/cardiascreen-api 8080:80 -n cardiascreen \
     >"$ROOT/logs/port-forward.log" 2>&1 &
   echo $! >"$ROOT/logs/port-forward.pid"
 }
 
 reuse_if_running() {
-  kubectl rollout status deployment/cardiascreen-api -n cardiascreen --timeout=30s || {
+  say "Restarting the CardiaScreen pods."
+  kubectl rollout restart deployment/cardiascreen-api -n cardiascreen || {
     say "No Ready cardiascreen-api deployment was found."
+    return 1
+  }
+  kubectl rollout status deployment/cardiascreen-api -n cardiascreen --timeout=240s || {
+    say "The deployment did not become Ready."
     return 1
   }
   expose_k8s
@@ -397,6 +430,11 @@ apply_k8s() {
     kubectl set resources deployment/cardiascreen-api -n cardiascreen -c api \
       --requests=cpu=50m,memory=128Mi --limits=cpu=500m,memory=512Mi
   fi
+  say "Restarting the CardiaScreen pods."
+  kubectl rollout restart deployment/cardiascreen-api -n cardiascreen || {
+    say "The deployment did not restart."
+    return 1
+  }
   say "Waiting until the deployment is Ready."
   if ! kubectl rollout status deployment/cardiascreen-api -n cardiascreen --timeout=240s; then
     say "The deployment did not become Ready."
@@ -434,15 +472,13 @@ start_compose() {
   [[ "$DOCKER_OK" == "1" ]] || return 1
   if [[ "$CLUSTER_OK" == "1" && "$RAM_GB" -lt 8 ]]; then
     say "Kubernetes is running on ${RAM_GB} GB. Prometheus and Grafana stay off so the cluster keeps its memory."
+    compose_cmd down >/dev/null 2>&1 || true
     COMPOSE_OK=0
     return 0
   fi
-  say "Building and starting the API, Prometheus, and Grafana."
-  if [[ "$CLUSTER_OK" == "1" ]]; then
-    compose_cmd up -d || return 1
-  else
-    compose_cmd up -d --build || return 1
-  fi
+  say "Restarting the API, Prometheus, and Grafana."
+  compose_cmd down >/dev/null 2>&1 || true
+  compose_cmd up -d --build --force-recreate || return 1
   WAIT_URL="http://127.0.0.1:8000/health"
   wait_url || return 1
   COMPOSE_OK=1
@@ -466,20 +502,25 @@ smoke_at() {
 }
 
 serve_python() {
-  say "Starting the API on http://127.0.0.1:8000 without a container"
+  say "Restarting the API on http://127.0.0.1:8000 without a container"
   mkdir -p "$ROOT/logs"
+  stop_port 8000 "$ROOT/logs/api.pid"
   PYTHONPATH=src nohup "$ROOT/.venv/bin/python" scripts/run_lab.py >"$ROOT/logs/api.log" 2>&1 &
   echo $! >"$ROOT/logs/api.pid"
   PYTHON_OK=1
 }
 
+publish_tracking() {
+  say "Publishing the committed model into the MLflow Model Registry"
+  PYTHONPATH=src "$ROOT/.venv/bin/python" -m cardiascreen.tracking \
+    || say "The model was not added to the MLflow registry. The UI can still open."
+}
+
 start_mlflow() {
-  if http_ok "http://127.0.0.1:5000"; then
-    say "MLflow is already using port 5000."
-    return 0
-  fi
   [[ -x "$ROOT/.venv/bin/mlflow" ]] || return 0
+  say "Restarting MLflow."
   mkdir -p "$ROOT/logs"
+  stop_port 5000 "$ROOT/logs/mlflow.pid"
   nohup "$ROOT/.venv/bin/mlflow" ui --backend-store-uri sqlite:///mlruns/mlflow.db --host 127.0.0.1 --port 5000 \
     >"$ROOT/logs/mlflow.log" 2>&1 &
   echo $! >"$ROOT/logs/mlflow.pid"
@@ -511,7 +552,8 @@ summary() {
   if [[ "$CLUSTER_OK" == "0" && "$COMPOSE_OK" == "0" && "$PYTHON_OK" == "0" ]]; then
     say "Nothing is serving. Read the messages above."
   fi
-  say "  MLflow       http://127.0.0.1:5000"
+  say "  MLflow runs     http://127.0.0.1:5000/#/experiments/1/runs?workflowType=machine_learning"
+  say "  Model Registry  http://127.0.0.1:5000/#/models/cardiascreen-heart-risk"
   say "The public copy is https://iamvastava-cardiascreen-api.hf.space"
   say "A new training run is optional. The model already in git is the one being served."
   say "----------------------------------------"
@@ -596,6 +638,7 @@ main() {
   if [[ "$CLUSTER_OK" == "1" ]]; then
     smoke_at "http://127.0.0.1:8080"
   fi
+  publish_tracking
   start_mlflow
   summary
 }
